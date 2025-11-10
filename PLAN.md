@@ -76,145 +76,183 @@ The web client has 5 main pages:
 
 ### Technology Stack Recommendation
 
-**Language: Rust** (or Python as alternative)
+**Language: TypeScript/Node.js** ⭐ **RECOMMENDED**
 
-**Reasons for Rust:**
-- Excellent TUI libraries (ratatui, tui-rs)
-- Strong protobuf support (prost)
-- Type safety and performance
-- Cross-platform support
-- Good HTTP client libraries (reqwest)
+**Why TypeScript:**
+- 🎯 **Use official Meshtastic libraries** - No need to reimplement protocol!
+- `@meshtastic/core` - Already has MeshDevice class
+- `@meshtastic/transport-http` - HTTP transport already implemented
+- `@meshtastic/protobufs` - Protobuf definitions already compiled
+- Type safety and excellent tooling
+- Large ecosystem and community
 
 **Core Dependencies:**
-- `ratatui` - Modern TUI framework (successor to tui-rs)
-- `crossterm` - Terminal manipulation
-- `prost` - Protobuf implementation
-- `reqwest` - HTTP client
-- `tokio` - Async runtime
-- `serde` - Serialization framework
+- `@meshtastic/core` - Device interaction (official)
+- `@meshtastic/transport-http` - HTTP transport (official)
+- `@meshtastic/protobufs` - Protocol definitions (official)
+- **TUI Library** - Choose one:
+  - **`blessed`** - Traditional, feature-rich, widget-based ⭐ Recommended for complex UIs
+  - **`ink`** - React-based, modern, declarative (good if you know React)
+- `blessed-contrib` - Additional widgets (graphs, maps, etc.)
+- `typescript` - Type system
 
-**Alternative: Python**
-- `textual` or `urwid` - TUI frameworks
-- `protobuf` - Google's protobuf library
-- `requests` or `httpx` - HTTP clients
-- Good for rapid development
+**Alternative 1: Rust**
+- `ratatui` + `crossterm` - Excellent TUI
+- BUT: Must reimplement entire protocol, protobuf parsing, HTTP transport
+- Good for: Performance-critical applications, learning exercise
 
-### Architecture
+**Alternative 2: Python**
+- `textual` - Modern TUI framework
+- BUT: Must reimplement protocol or use Python Meshtastic library (CLI-focused)
+- Good for: Rapid prototyping
+
+### Architecture (TypeScript)
 
 ```
 meshtastic-tui/
 ├── src/
-│   ├── main.rs
-│   ├── app.rs              # Main application state
+│   ├── index.ts            # Entry point
+│   ├── app.ts              # Main application class
 │   ├── ui/                 # UI components
-│   │   ├── mod.rs
-│   │   ├── layout.rs       # Layout management
-│   │   ├── nodes.rs        # Nodes list view
-│   │   ├── messages.rs     # Messages view
-│   │   ├── map.rs          # ASCII/text map view
-│   │   ├── config.rs       # Configuration view
-│   │   └── input.rs        # Input handling
-│   ├── client/             # HTTP client & protocol
-│   │   ├── mod.rs
-│   │   ├── transport.rs    # HTTP transport layer
-│   │   ├── device.rs       # Device abstraction
-│   │   └── proto.rs        # Protobuf helpers
+│   │   ├── index.ts
+│   │   ├── layout.ts       # Main layout manager
+│   │   ├── nodes.ts        # Nodes list view
+│   │   ├── messages.ts     # Messages view
+│   │   ├── map.ts          # ASCII/text map view
+│   │   ├── config.ts       # Configuration view
+│   │   └── statusBar.ts    # Status bar
+│   ├── client/             # Device client wrapper
+│   │   ├── index.ts
+│   │   ├── deviceManager.ts # Manages MeshDevice instance
+│   │   └── eventHandler.ts  # Handle device events
 │   ├── models/             # Data models
-│   │   ├── mod.rs
-│   │   ├── node.rs         # Node information
-│   │   ├── message.rs      # Message types
-│   │   └── config.rs       # Configuration
+│   │   ├── appState.ts     # Application state
+│   │   ├── node.ts         # Node information
+│   │   └── message.ts      # Message types
 │   └── utils/              # Utilities
-│       ├── mod.rs
-│       └── time.rs         # Time formatting
-├── proto/                  # Protobuf definitions
-│   └── meshtastic/
-├── Cargo.toml
+│       ├── time.ts         # Time formatting
+│       └── logger.ts       # Logging
+├── package.json
+├── tsconfig.json
 └── README.md
 ```
 
+**Key advantage:** No `client/transport.ts` or `proto/` directory needed - just import from npm!
+
 ### Implementation Phases
 
-#### Phase 1: Foundation (Week 1)
-**Goal:** Basic HTTP connection and protobuf handling
+#### Phase 1: Foundation (Day 1-2) ⚡ Much Faster!
+**Goal:** Basic HTTP connection using official libraries
 
 Tasks:
-1. Set up Rust project with dependencies
-2. Import Meshtastic protobuf definitions
-3. Implement HTTP transport layer:
-   - `connect(url)` - Connect to device
-   - `send_to_radio(msg)` - Send ToRadio message
-   - `read_from_radio()` - Read FromRadio message
-   - `poll_updates()` - Poll for new messages
+1. Initialize TypeScript/Node.js project:
+   ```bash
+   npm init -y
+   npm install @meshtastic/core @meshtastic/transport-http @meshtastic/protobufs
+   npm install --save-dev typescript @types/node ts-node
+   ```
+2. Create basic device connection:
+   ```typescript
+   import { MeshDevice } from "@meshtastic/core";
+   import { TransportHTTP } from "@meshtastic/transport-http";
+
+   const transport = await TransportHTTP.create("10.10.0.57");
+   const device = new MeshDevice(transport);
+   ```
+3. Set up event listeners for device events
 4. Test connection with real device
 5. Print received messages to console
 
 **Deliverables:**
-- Working HTTP client that can connect and exchange protobufs
+- Working HTTP client using official libraries (WAY faster than reimplementing!)
 - Console output showing node info and messages
 
-#### Phase 2: Data Models & State Management (Week 1-2)
+**Time saved:** Days of protobuf/HTTP implementation work!
+
+#### Phase 2: Data Models & State Management (Day 2-3)
 **Goal:** Maintain synchronized state with device
 
 Tasks:
-1. Create data models for:
-   - `Node` - Node information with user, position, metrics
-   - `Message` - Chat messages
-   - `Channel` - Channel configuration
-   - `AppState` - Overall application state
-2. Implement state management:
-   - Initial sync handler (process config_complete_id)
-   - Node database updates
-   - Message history
-   - Connection state
-3. Message queue for outgoing messages
+1. Create TypeScript interfaces extending Meshtastic types:
+   ```typescript
+   import { Protobuf } from "@meshtastic/protobufs";
+
+   interface NodeState extends Protobuf.Mesh.NodeInfo {
+     lastSeen: Date;
+     isOnline: boolean;
+   }
+
+   interface AppState {
+     nodes: Map<number, NodeState>;
+     messages: Message[];
+     myNodeId: number | null;
+     isConnected: boolean;
+   }
+   ```
+2. Implement event handlers for MeshDevice events:
+   - `onNodeInfoPacket` - Update node database
+   - `onUserPacket` - Update user info
+   - `onPositionPacket` - Update positions
+   - `onMessagePacket` - Add to message history
+3. State manager class to centralize updates
 
 **Deliverables:**
-- In-memory database of nodes
-- Message history
-- State synchronization with device
+- Type-safe state management
+- Event-driven updates
+- In-memory node database
 
-#### Phase 3: Basic TUI (Week 2)
-**Goal:** Simple working interface
+#### Phase 3: Basic TUI (Day 3-5)
+**Goal:** Simple working interface with Blessed
 
 Tasks:
-1. Set up ratatui with crossterm backend
-2. Create basic layout:
-   - Header with connection status
-   - Main content area (tabbed)
-   - Status/notification bar
-   - Input line at bottom
-3. Implement "Nodes" tab:
-   - List of nodes with columns: Name, ID, SNR, Last Heard, Hops
-   - Scrollable list
-   - Node details panel (when selected)
-4. Basic keyboard navigation (arrow keys, tab, q to quit)
+1. Install TUI dependencies:
+   ```bash
+   npm install blessed @types/blessed
+   npm install blessed-contrib  # Optional: for advanced widgets
+   ```
+2. Create basic blessed layout:
+   ```typescript
+   import blessed from 'blessed';
+
+   const screen = blessed.screen({ smartCSR: true });
+   const layout = blessed.layout({ /* ... */ });
+   ```
+3. Implement "Nodes" view:
+   - `blessed.listtable` for nodes with columns
+   - Node details box (when selected)
+   - Real-time updates from device events
+4. Add keyboard bindings (arrow keys, tab, q to quit)
+5. Status bar showing connection state
 
 **Deliverables:**
 - Working TUI with nodes list
 - Keyboard navigation
+- Real-time updates
 
-#### Phase 4: Messages View (Week 2-3)
+#### Phase 4: Messages View (Day 5-7)
 **Goal:** Send and receive messages
 
 Tasks:
-1. Implement "Messages" tab:
-   - Message list showing sender, timestamp, content
-   - Message input at bottom
-   - Channel indicator
-2. Message sending:
-   - Text input field
-   - Send on Enter
-   - Destination selection (broadcast, direct, channel)
-3. Message receiving:
-   - Parse incoming MeshPackets
-   - Filter by port number (TEXT_MESSAGE_APP = port 1)
-   - Update UI in real-time
-4. Message notifications
+1. Implement "Messages" view:
+   - `blessed.log` or `blessed.list` for message history
+   - `blessed.textbox` for input at bottom
+   - Channel selector
+2. Message sending using MeshDevice:
+   ```typescript
+   device.sendText(messageText, destinationNode, channelIndex);
+   ```
+3. Message receiving via events:
+   ```typescript
+   device.events.onMessagePacket.subscribe((packet) => {
+     // Update UI with new message
+   });
+   ```
+4. Message notifications and sound (optional)
 
 **Deliverables:**
-- Full messaging functionality
+- Full messaging functionality (super easy with official library!)
 - Send/receive text messages
+- Real-time updates
 
 #### Phase 5: Enhanced Features (Week 3-4)
 **Goal:** More views and features
@@ -278,104 +316,144 @@ Tasks:
 
 ### HTTP Polling Strategy
 
-Since HTTP doesn't have native push notifications, implement polling:
+The `@meshtastic/transport-http` library handles polling automatically! You just need to:
 
-```rust
-async fn poll_updates(transport: &HttpTransport) {
-    loop {
-        match transport.read_from_radio().await {
-            Ok(messages) if !messages.is_empty() => {
-                for msg in messages {
-                    handle_from_radio(msg).await;
-                }
-            }
-            Ok(_) => {} // No new messages
-            Err(e) => log_error(e),
-        }
-        tokio::time::sleep(Duration::from_millis(500)).await;
-    }
-}
+```typescript
+import { MeshDevice } from "@meshtastic/core";
+import { TransportHTTP } from "@meshtastic/transport-http";
+
+// Create transport and device
+const transport = await TransportHTTP.create("10.10.0.57");
+const device = new MeshDevice(transport);
+
+// Subscribe to events - polling happens automatically!
+device.events.onMessagePacket.subscribe((packet) => {
+  console.log("New message:", packet);
+});
+
+device.events.onNodeInfoPacket.subscribe((nodeInfo) => {
+  console.log("Node update:", nodeInfo);
+});
 ```
+
+**That's it!** The library handles all the complexity of polling `/api/v1/fromradio`.
 
 ### Protobuf Integration
 
-Use `prost-build` to generate Rust code from `.proto` files:
+**No setup needed!** Just import types:
 
-```rust
-// build.rs
-fn main() {
-    prost_build::compile_protos(
-        &["proto/meshtastic/mesh.proto", /* ... */],
-        &["proto/"]
-    ).unwrap();
-}
+```typescript
+import { Protobuf } from "@meshtastic/protobufs";
+
+// All protobuf types are available
+const nodeInfo: Protobuf.Mesh.NodeInfo = { /* ... */ };
+const meshPacket: Protobuf.Mesh.MeshPacket = { /* ... */ };
+const toRadio: Protobuf.Mesh.ToRadio = { /* ... */ };
 ```
+
+The official library handles all serialization/deserialization automatically.
 
 ### Message Handling
 
-Parse FromRadio variants:
+Use the event system provided by `@meshtastic/core`:
 
-```rust
-match from_radio.payload_variant {
-    Some(PayloadVariant::Packet(mesh_packet)) => {
-        // Handle incoming message
-    }
-    Some(PayloadVariant::NodeInfo(node_info)) => {
-        // Update node database
-    }
-    Some(PayloadVariant::MyInfo(my_info)) => {
-        // Store our node info
-    }
-    Some(PayloadVariant::ConfigCompleteId(_)) => {
-        // Initial sync complete
-    }
-    // ... other variants
-}
+```typescript
+import { MeshDevice } from "@meshtastic/core";
+
+const device = new MeshDevice(transport);
+
+// Subscribe to specific event types
+device.events.onNodeInfoPacket.subscribe((nodeInfo) => {
+  appState.updateNode(nodeInfo);
+});
+
+device.events.onUserPacket.subscribe((user) => {
+  appState.updateUser(user);
+});
+
+device.events.onMessagePacket.subscribe((message) => {
+  appState.addMessage(message);
+  ui.updateMessageView();
+});
+
+device.events.onPositionPacket.subscribe((position) => {
+  appState.updatePosition(position);
+  ui.updateMapView();
+});
+
+// Connection events
+device.events.onDeviceStatus.subscribe((status) => {
+  ui.updateConnectionStatus(status);
+});
 ```
 
-### TUI Event Loop
+**Event types are fully typed** thanks to TypeScript!
 
-Use async task for UI and network:
+### TUI Event Loop with Blessed
 
-```rust
-#[tokio::main]
-async fn main() {
-    let (tx, rx) = mpsc::channel();
+Simple event-driven architecture:
 
-    // Spawn network task
-    tokio::spawn(async move {
-        poll_updates(&transport, tx).await;
-    });
+```typescript
+import blessed from 'blessed';
+import { MeshDevice } from "@meshtastic/core";
+import { TransportHTTP } from "@meshtastic/transport-http";
 
-    // Run UI loop
-    loop {
-        terminal.draw(|f| ui::draw(f, &app_state))?;
+async function main() {
+  // Initialize screen
+  const screen = blessed.screen({ smartCSR: true });
 
-        if event::poll(Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
-                handle_key(key, &mut app_state)?;
-            }
-        }
+  // Connect to device
+  const transport = await TransportHTTP.create("10.10.0.57");
+  const device = new MeshDevice(transport);
 
-        // Process network messages
-        while let Ok(msg) = rx.try_recv() {
-            app_state.update(msg);
-        }
-    }
+  // Create UI components
+  const nodesBox = blessed.listtable({ /* ... */ });
+  const messagesBox = blessed.log({ /* ... */ });
+
+  // Subscribe to device events → update UI
+  device.events.onNodeInfoPacket.subscribe((nodeInfo) => {
+    updateNodesTable(nodesBox, nodeInfo);
+    screen.render();
+  });
+
+  device.events.onMessagePacket.subscribe((message) => {
+    messagesBox.log(formatMessage(message));
+    screen.render();
+  });
+
+  // Keyboard handling
+  screen.key(['q', 'C-c'], () => {
+    device.disconnect();
+    process.exit(0);
+  });
+
+  screen.key(['tab'], () => {
+    switchTab();
+  });
+
+  // Initial render
+  screen.render();
 }
+
+main().catch(console.error);
 ```
+
+**Much simpler than managing async tasks manually!**
 
 ---
 
 ## Minimal Viable Product (MVP)
 
-For quickest results, focus on:
+**Goal:** Working TUI in 1 week (or less!)
 
-1. **HTTP connection** to device (Phase 1)
-2. **Node list view** (Phase 3)
-3. **Message view** with send/receive (Phase 4)
+Focus on:
+1. **HTTP connection** using `@meshtastic/transport-http` (Day 1-2)
+2. **Node list view** with Blessed (Day 3-4)
+3. **Message view** with send/receive (Day 5-7)
 
-This provides core functionality: connect, see nodes, chat.
+This provides core functionality: **connect → see nodes → chat**
+
+**Estimated development time:** 7 days vs. 4-6 weeks for Rust implementation!
 
 ---
 
@@ -400,43 +478,119 @@ This provides core functionality: connect, see nodes, chat.
 
 ## Alternative Approaches
 
-### Simpler Start: Python + Textual
+### Option 1: TypeScript + Ink (React-based)
 
-For faster prototyping:
+If you prefer React patterns over traditional widgets:
+
+```typescript
+import React, { useState, useEffect } from 'react';
+import { render, Box, Text } from 'ink';
+import { MeshDevice } from "@meshtastic/core";
+import { TransportHTTP } from "@meshtastic/transport-http";
+
+function App() {
+  const [nodes, setNodes] = useState([]);
+
+  useEffect(() => {
+    const transport = await TransportHTTP.create("10.10.0.57");
+    const device = new MeshDevice(transport);
+
+    device.events.onNodeInfoPacket.subscribe((node) => {
+      setNodes(prev => [...prev, node]);
+    });
+  }, []);
+
+  return (
+    <Box flexDirection="column">
+      <Text>Nodes: {nodes.length}</Text>
+      {nodes.map(node => <Text key={node.num}>{node.user?.longName}</Text>)}
+    </Box>
+  );
+}
+
+render(<App />);
+```
+
+**Benefits:**
+- React component model (if you know React)
+- State management with hooks
+- Still uses official Meshtastic libraries
+
+**Drawbacks:**
+- Less feature-rich than Blessed for complex layouts
+- Fewer widgets available
+
+### Option 2: Python + Textual
+
+If you prefer Python:
+
 ```python
 from textual.app import App
 from textual.widgets import Header, Footer, ListView
-import requests
-from meshtastic import mesh_pb2
+# Note: Would need to implement HTTP transport or use Python meshtastic library
 
 class MeshtasticTUI(App):
     # ... implementation
 ```
 
-Benefits:
-- Faster development
-- Easier protobuf integration (Google's official library)
-- Good TUI framework (Textual is modern and feature-rich)
+**Benefits:**
+- Textual is excellent (modern, async, CSS-like styling)
+- Python is easy to prototype with
 
-Drawbacks:
-- Slower performance
-- Larger runtime dependencies
+**Drawbacks:**
+- No official Meshtastic HTTP transport library for Python
+- Would need to implement protocol yourself
+- Python meshtastic library is CLI-focused, not library-focused
 
-### Re-use JavaScript Libraries
+### Option 3: Rust + Ratatui
 
-Could use Node.js with blessed/ink and official `@meshtastic` packages:
-- Fastest to market (libraries already exist)
-- Direct compatibility with web client
-- But: JavaScript in terminal is less common
+For maximum performance:
+
+**Benefits:**
+- Beautiful TUI with Ratatui
+- Fast and efficient
+- Type-safe
+
+**Drawbacks:**
+- Must reimplement entire protocol
+- Must handle protobuf compilation
+- Weeks more development time
+- Harder to maintain (keep up with protocol changes)
+
+---
+
+## Recommended Choice: TypeScript + Blessed
+
+**Why this is the best option:**
+
+✅ **Official libraries** - No protocol reimplementation
+✅ **Fast development** - 1 week vs. 4-6 weeks
+✅ **Type safety** - TypeScript catches errors
+✅ **Maintainable** - Library updates = automatic protocol updates
+✅ **Feature-rich UI** - Blessed has all widgets needed
+✅ **Cross-platform** - Works on Linux, macOS, Windows
 
 ---
 
 ## Next Steps
 
-1. **Choose language** (Rust recommended, Python for speed)
-2. **Set up project** structure
-3. **Clone protobufs** from Meshtastic repository
-4. **Start Phase 1** - Basic HTTP connection
-5. **Test with device** to validate approach
+1. ✅ **Analyze web client** - DONE
+2. ✅ **Create implementation plan** - DONE
+3. **Initialize TypeScript project**
+4. **Install Meshtastic libraries**
+5. **Test connection with device** (Phase 1)
+6. **Build basic TUI** (Phase 2-3)
+7. **Add messaging** (Phase 4)
 
-Would you like me to start implementing the TUI client? I can begin with Phase 1 in Rust or Python based on your preference.
+---
+
+## Ready to Build?
+
+Would you like me to start implementing? I can:
+
+1. **Initialize the project** - Set up package.json, tsconfig.json, etc.
+2. **Create Phase 1** - Basic HTTP connection and console output
+3. **Build Phase 2-3** - Working TUI with nodes list
+4. **Implement Phase 4** - Full messaging functionality
+
+We can have a working MVP in about a week of development!
