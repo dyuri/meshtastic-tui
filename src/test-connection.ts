@@ -33,13 +33,8 @@ async function main() {
 
     console.log("Setting up event listeners...\n");
 
-    // Listen for connection events
-    device.events.onDeviceStatus.subscribe((status) => {
-      console.log(`[DEVICE STATUS] ${JSON.stringify(status, null, 2)}`);
-    });
-
     // Listen for node info updates
-    device.events.onNodeInfoPacket.subscribe((nodeInfo) => {
+    device.events.onNodeInfoPacket.subscribe((nodeInfo: any) => {
       console.log(`\n[NODE INFO]`);
       console.log(`  Node ID: ${nodeInfo.num}`);
       if (nodeInfo.user) {
@@ -55,39 +50,37 @@ async function main() {
     });
 
     // Listen for user packet updates
-    device.events.onUserPacket.subscribe((user) => {
+    device.events.onUserPacket.subscribe((packet: any) => {
+      const user = packet.data;
       console.log(`\n[USER UPDATE]`);
       console.log(`  ${user.longName} (${user.shortName})`);
       console.log(`  MAC: ${user.macaddr}`);
     });
 
     // Listen for position updates
-    device.events.onPositionPacket.subscribe((position) => {
+    device.events.onPositionPacket.subscribe((packet: any) => {
+      const position = packet.data;
       console.log(`\n[POSITION UPDATE]`);
       console.log(`  Lat: ${position.latitude}, Lon: ${position.longitude}`);
       console.log(`  Altitude: ${position.altitude}m`);
     });
 
     // Listen for text messages
-    device.events.onMessagePacket.subscribe((packet) => {
+    device.events.onMessagePacket.subscribe((packet: any) => {
       console.log(`\n[MESSAGE]`);
       console.log(`  From: ${packet.from}`);
       console.log(`  To: ${packet.to}`);
-      console.log(`  Text: ${packet.text}`);
+      console.log(`  Text: ${packet.data}`);
       console.log(`  Channel: ${packet.channel}`);
     });
 
     // Listen for my node info
-    device.events.onMyNodeInfo.subscribe((myInfo) => {
+    device.events.onMyNodeInfo.subscribe((myInfo: any) => {
       console.log(`\n[MY NODE INFO]`);
       console.log(`  My Node Number: ${myInfo.myNodeNum}`);
       console.log(`  Max Channels: ${myInfo.maxChannels}`);
       console.log(`  Reboot Count: ${myInfo.rebootCount}`);
-    });
-
-    // Listen for config complete
-    device.events.onConfigComplete.subscribe(() => {
-      console.log(`\n✓ Initial configuration sync complete!`);
+      console.log(`\n✓ Initial configuration sync in progress...`);
       console.log(`\nListening for updates... (Press Ctrl+C to exit)`);
     });
 

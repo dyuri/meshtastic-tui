@@ -4,7 +4,7 @@
 
 import { MeshDevice } from "@meshtastic/core";
 import { TransportHTTP } from "@meshtastic/transport-http";
-import type { Protobuf } from "@meshtastic/protobufs";
+import * as Protobuf from "@meshtastic/protobufs";
 import type { AppState, NodeState, Message } from "../models/appState.js";
 import { isNodeOnline } from "../models/appState.js";
 
@@ -52,7 +52,7 @@ export class DeviceManager {
     if (!this.device) {
       throw new Error("Not connected to device");
     }
-    await this.device.sendText(text, destination, channel);
+    await this.device.sendText(text, destination, undefined, channel);
   }
 
   /**
@@ -69,19 +69,21 @@ export class DeviceManager {
     if (!this.device) return;
 
     // My node info
-    this.device.events.onMyNodeInfo.subscribe((myInfo) => {
+    this.device.events.onMyNodeInfo.subscribe((myInfo: Protobuf.Mesh.MyNodeInfo) => {
       this.appState.myNodeNum = myInfo.myNodeNum;
       this.emit('myNodeInfo', myInfo);
     });
 
     // Node info updates
-    this.device.events.onNodeInfoPacket.subscribe((nodeInfo) => {
+    this.device.events.onNodeInfoPacket.subscribe((nodeInfo: Protobuf.Mesh.NodeInfo) => {
       this.updateNode(nodeInfo);
       this.emit('nodeInfo', nodeInfo);
     });
 
     // User updates
-    this.device.events.onUserPacket.subscribe((user) => {
+    this.device.events.onUserPacket.subscribe((packet: any) => {
+      // packet is PacketMetadata<Protobuf.Mesh.User>
+      const user = packet.data;
       // Find node with matching MAC address and update
       for (const [nodeNum, node] of this.appState.nodes.entries()) {
         if (node.user?.macaddr === user.macaddr) {
@@ -94,20 +96,20 @@ export class DeviceManager {
     });
 
     // Position updates
-    this.device.events.onPositionPacket.subscribe((position) => {
-      // Update position for nodes - position updates don't include node number
-      // so we need to track which node sent it
-      this.emit('position', position);
+    this.device.events.onPositionPacket.subscribe((packet: any) => {
+      // packet is PacketMetadata<Protobuf.Mesh.Position>
+      this.emit('position', packet);
     });
 
     // Text messages
-    this.device.events.onMessagePacket.subscribe((packet) => {
+    this.device.events.onMessagePacket.subscribe((packet: any) => {
+      // packet is PacketMetadata<string>
       const message: Message = {
         id: `${packet.from}-${packet.to}-${Date.now()}`,
         from: packet.from,
         to: packet.to,
         channel: packet.channel,
-        text: packet.text || "",
+        text: packet.data || "",
         timestamp: new Date(),
         fromName: this.appState.nodes.get(packet.from)?.user?.longName,
         toName: this.appState.nodes.get(packet.to)?.user?.longName,
@@ -117,18 +119,13 @@ export class DeviceManager {
       this.emit('message', message);
     });
 
-    // Config complete
-    this.device.events.onConfigComplete.subscribe(() => {
-      this.emit('configComplete');
-    });
-
-    // Device status
-    this.device.events.onDeviceStatus.subscribe((status) => {
-      this.emit('deviceStatus', status);
-    });
+    // Device status (note: this event might not exist, but we keep the handler)
+    // this.device.events.onDeviceStatus?.subscribe((status: any) => {
+    //   this.emit('deviceStatus', status);
+    // });
 
     // Channel updates
-    this.device.events.onChannelPacket.subscribe((channel) => {
+    this.device.events.onChannelPacket.subscribe((channel: Protobuf.Channel.Channel) => {
       const existingIndex = this.appState.channels.findIndex(
         (c) => c.index === channel.index
       );
@@ -143,13 +140,13 @@ export class DeviceManager {
     });
 
     // Config updates
-    this.device.events.onConfigPacket.subscribe((config) => {
+    this.device.events.onConfigPacket.subscribe((config: Protobuf.Config.Config) => {
       this.appState.config = config;
       this.emit('config', config);
     });
 
     // Module config updates
-    this.device.events.onModuleConfigPacket.subscribe((moduleConfig) => {
+    this.device.events.onModuleConfigPacket.subscribe((moduleConfig: Protobuf.ModuleConfig.ModuleConfig) => {
       this.appState.moduleConfig = moduleConfig;
       this.emit('moduleConfig', moduleConfig);
     });

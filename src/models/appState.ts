@@ -2,7 +2,7 @@
  * Application state management
  */
 
-import type { Protobuf } from "@meshtastic/protobufs";
+import * as Protobuf from "@meshtastic/protobufs";
 
 /**
  * Extended node information with UI-specific fields

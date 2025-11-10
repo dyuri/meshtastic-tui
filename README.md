@@ -40,13 +40,37 @@ MESHTASTIC_HOST=192.168.1.100 npm run test:connection
 ### Running the TUI
 
 ```bash
-# Development mode (with hot reload)
+# Run the TUI interface (recommended)
+npm run tui
+
+# Or with custom IP
+MESHTASTIC_HOST=192.168.1.100 npm run tui
+
+# Run console version (simple text output)
 npm run dev
 
-# Or build and run
+# Or build and run compiled version
 npm run build
 npm start
 ```
+
+### Using the TUI
+
+Once running, you'll see the interactive terminal interface:
+
+**Keyboard Shortcuts:**
+- `Tab` - Switch between views (Nodes / Messages)
+- `1` / `2` - Jump to specific view
+- `↑` / `↓` - Navigate lists
+- `C` - Compose message (in Messages view)
+- `Enter` - Send message / Select item
+- `R` - Refresh display
+- `?` / `H` - Show help
+- `Q` / `Ctrl+C` - Quit
+
+**Views:**
+- **Nodes View** - See all mesh nodes with status, SNR, last heard time, GPS position, battery level, and more
+- **Messages View** - Send and receive text messages (broadcast or direct)
 
 ## Configuration
 
@@ -81,7 +105,7 @@ meshtastic-tui/
 - **@meshtastic/core** - Official Meshtastic device library
 - **@meshtastic/transport-http** - HTTP transport for Meshtastic
 - **@meshtastic/protobufs** - Protocol Buffer definitions
-- **blessed** (Coming soon) - Terminal UI framework
+- **blessed** - Terminal UI framework
 
 ## Development
 
@@ -111,12 +135,12 @@ This means we don't need to reimplement the protocol - we get all the benefits o
 
 ## Roadmap
 
-- [x] Phase 1: Basic HTTP connection
-- [ ] Phase 2: State management
-- [ ] Phase 3: Nodes view with Blessed
-- [ ] Phase 4: Messages view
-- [ ] Phase 5: Map and config views
-- [ ] Phase 6: Advanced features
+- [x] Phase 1: Basic HTTP connection and state management
+- [x] Phase 2: Data models and event system
+- [x] Phase 3: Nodes view with Blessed TUI
+- [x] Phase 4: Messages view (send/receive)
+- [ ] Phase 5: Enhanced features (map view, telemetry graphs)
+- [ ] Phase 6: Configuration editing and advanced features
 
 ## License
 

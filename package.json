@@ -6,21 +6,29 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "tui": "tsx src/tui.ts",
     "dev": "tsx src/index.ts",
-    "start": "node dist/index.js",
+    "start": "node dist/tui.js",
     "test:connection": "tsx src/test-connection.ts"
   },
   "repository": {
     "type": "git",
     "url": "http://local_proxy@127.0.0.1:63814/git/dyuri/meshtastic-tui"
   },
-  "keywords": ["meshtastic", "tui", "mesh", "terminal"],
+  "keywords": [
+    "meshtastic",
+    "tui",
+    "mesh",
+    "terminal"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@meshtastic/core": "^2.6.7",
     "@meshtastic/protobufs": "^2.7.8",
-    "@meshtastic/transport-http": "^0.2.5"
+    "@meshtastic/transport-http": "^0.2.5",
+    "@types/blessed": "^0.1.25",
+    "blessed": "^0.1.81"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

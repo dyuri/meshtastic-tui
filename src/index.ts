@@ -31,13 +31,13 @@ async function main() {
     console.log("✓ Connected!\n");
 
     // Set up event listeners
-    deviceManager.on('myNodeInfo', (myInfo) => {
+    deviceManager.on('myNodeInfo', (myInfo: any) => {
       console.log(`\n[MY NODE] Node #${myInfo.myNodeNum}`);
       console.log(`  Reboot count: ${myInfo.rebootCount}`);
       console.log(`  Max channels: ${myInfo.maxChannels}`);
     });
 
-    deviceManager.on('nodeInfo', (nodeInfo) => {
+    deviceManager.on('nodeInfo', (nodeInfo: any) => {
       const node = appState.nodes.get(nodeInfo.num);
       if (!node) return;
 
@@ -61,7 +61,7 @@ async function main() {
       }
     });
 
-    deviceManager.on('message', (message) => {
+    deviceManager.on('message', (message: any) => {
       const fromNode = appState.nodes.get(message.from);
       const toNode = appState.nodes.get(message.to);
 
@@ -73,15 +73,15 @@ async function main() {
       console.log(`  Time: ${message.timestamp.toLocaleTimeString()}`);
     });
 
-    deviceManager.on('configComplete', () => {
-      console.log(`\n✓ Initial configuration sync complete!`);
+    // Print status after first node info is received
+    setTimeout(() => {
       console.log(`\n📊 Network Status:`);
       console.log(`  Total nodes: ${appState.nodes.size}`);
       console.log(`  Online nodes: ${Array.from(appState.nodes.values()).filter(n => n.isOnline).length}`);
       console.log(`  Channels: ${appState.channels.length}`);
       console.log(`  Messages: ${appState.messages.length}`);
       console.log(`\nListening for updates... (Press Ctrl+C to exit)\n`);
-    });
+    }, 5000);
 
     // Handle graceful shutdown
     process.on('SIGINT', async () => {
